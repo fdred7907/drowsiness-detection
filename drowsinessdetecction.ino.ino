@@ -102,43 +102,36 @@ void loop() {
   }
 }
 
-bool Getpeak(float new_sample){
-  // Buffers for data, mean, and standard deviation
-  static float data_buffer[DATA_LENGTH];
-  static float mean_buffer[DATA_LENGTH];
-  static float standard_deviation_buffer[DATA_LENGTH];
-  
-  // Check for peak
-  if (new_sample - mean_buffer[data_index] > (DATA_LENGTH*1.2) * standard_deviation_buffer[data_index]) {
-    data_buffer[data_index] = new_sample + data_buffer[data_index];
-    peak = true;
-  } else {
-    data_buffer[data_index] = new_sample;
-    peak = false;
-  }
+bool Getpeak(float new_sample) {
+  static float data_buffer[DATA_LENGTH] = {0};
+  static int data_index = 0;
+  static float mean = 0.0;
+  static float standard_deviation = 0.0;
+  static bool peak = false;
+
+  // Store new sample
+  data_buffer[data_index] = new_sample;
 
   // Calculate mean
-  float sum = 0.0, mean, standard_deviation = 0.0;
-  for (int i = 0; i < DATA_LENGTH; ++i){
-    sum += data_buffer[(data_index + i) % DATA_LENGTH];
+  float sum = 0.0;
+  for (int i = 0; i < DATA_LENGTH; ++i) {
+    sum += data_buffer[i];
   }
-  mean = sum/DATA_LENGTH;
+  mean = sum / DATA_LENGTH;
 
   // Calculate standard deviation
-  for (int i = 0; i < DATA_LENGTH; ++i){
-    standard_deviation += pow(data_buffer[(i) % DATA_LENGTH] - mean, 2);
+  float variance = 0.0;
+  for (int i = 0; i < DATA_LENGTH; ++i) {
+    variance += pow(data_buffer[i] - mean, 2);
   }
+  standard_deviation = sqrt(variance / DATA_LENGTH);
 
-  // Update mean buffer
-  mean_buffer[data_index] = mean;
+  // Check for peak (dynamic threshold)
+  peak = (new_sample - mean) > (1.2 * standard_deviation);
 
-  // Update standard deviation buffer
-  standard_deviation_buffer[data_index] =  sqrt(standard_deviation/DATA_LENGTH);
+  // Update index
+  data_index = (data_index + 1) % DATA_LENGTH;
 
-  // Update data_index
-  data_index = (data_index+1)%DATA_LENGTH;
-
-  // Return peak
   return peak;
 }
 
